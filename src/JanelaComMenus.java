@@ -1,91 +1,77 @@
+import java.awt.Font;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.*;
 import java.util.Random;
 
+
 public class JanelaComMenus extends JFrame {
-    //Criando variáveis do projeto
-    private String tokenGerado = null; // Armazena o token gerado
-    private JTextField CampoNumero;
-    private JButton botaoConfirmar;
-
-
+    private DefaultListModel<String> listaModel;
+    private JList<String> listaCorredores;
+    private JTextField campoNome, campoNumero, campoAno, campoEquipe, campoTelefone;
+    private JRadioButton radioMasculino, radioFeminino;
+    private ButtonGroup grupoSexo;
+    private String tokenGerado = null;
+    private static final String ARQUIVO_SQL = "parque.sql";
 
     public JanelaComMenus() {
         setTitle("BinaByte - Softwares");
-        setSize(1500, 700);
+        setSize(1000, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-                                        /* CRIANDO O MENU DE OPÇÕES DE CIMA DA JANELA */
-        // Criando a barra de menu
+//------------- AQUI FICA O MENU SUPERIOR COM AS OPÇÕES -------------
         JMenuBar menuBar = new JMenuBar();
-        // Menu "Arquivo"
         JMenu menuArquivo = new JMenu("Arquivo");
         JMenuItem menuAbrir = new JMenuItem("Abrir");
         JMenuItem menuSalvar = new JMenuItem("Salvar");
         JMenuItem menuSair = new JMenuItem("Sair");
-        // Ação para "Abrir"
-        menuAbrir.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int resultado = fileChooser.showOpenDialog(this);
-            if (resultado == JFileChooser.APPROVE_OPTION) {
-                JOptionPane.showMessageDialog(this, "Arquivo selecionado: " + fileChooser.getSelectedFile().getName());
-            }
-        });
-        // Ação para "Salvar"
-        menuSalvar.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int resultado = fileChooser.showSaveDialog(this);
-            if (resultado == JFileChooser.APPROVE_OPTION) {
-                JOptionPane.showMessageDialog(this, "Arquivo salvo em: " + fileChooser.getSelectedFile().getName());
-            }
-        });
-        // Ação para "Sair"
+
+        menuAbrir.addActionListener(e -> JOptionPane.showMessageDialog(this, "Abrindo arquivo..."));
+        menuSalvar.addActionListener(e -> JOptionPane.showMessageDialog(this, "Salvando arquivo..."));
         menuSair.addActionListener(e -> System.exit(0));
+
         menuArquivo.add(menuAbrir);
         menuArquivo.add(menuSalvar);
         menuArquivo.addSeparator();
         menuArquivo.add(menuSair);
-        // Menu "Ferramenta"
+
         JMenu menuFerramenta = new JMenu("Ferramenta");
         JMenuItem menuOp1 = new JMenuItem("Opção 1");
         JMenuItem menuOp2 = new JMenuItem("Opção 2");
-        // Ação para "Opção 1"
-        menuOp1.addActionListener(e -> JOptionPane.showMessageDialog(this, "Você clicou em Opção 1!"));
-        // Ação para "Opção 2"
-        menuOp2.addActionListener(e -> JOptionPane.showMessageDialog(this, "Você clicou em Opção 2!"));
+
+        menuOp1.addActionListener(e -> JOptionPane.showMessageDialog(this, "Opção 1 selecionada!"));
+        menuOp2.addActionListener(e -> JOptionPane.showMessageDialog(this, "Opção 2 selecionada!"));
+
         menuFerramenta.add(menuOp1);
         menuFerramenta.add(menuOp2);
-        // Menu "Configuração"
+
         JMenu menuConfiguracao = new JMenu("Configuração");
         JMenuItem menuPreferencias = new JMenuItem("Preferências");
         JMenuItem menuAjustes = new JMenuItem("Ajustes");
-        // Ação para "Preferências"
-        menuPreferencias.addActionListener(e -> JOptionPane.showMessageDialog(this, "Configurações de preferências!"));
-        // Ação para "Ajustes"
+
+        menuPreferencias.addActionListener(e -> JOptionPane.showMessageDialog(this, "Preferências abertas!"));
         menuAjustes.addActionListener(e -> JOptionPane.showMessageDialog(this, "Ajustes realizados!"));
+
         menuConfiguracao.add(menuPreferencias);
         menuConfiguracao.add(menuAjustes);
-        // Menu "Token"
+
         JMenu menuToken = new JMenu("Token");
         JMenuItem menuGerarToken = new JMenuItem("Gerar Token");
         JMenuItem menuValidarToken = new JMenuItem("Validar Token");
-        // Ação para "Gerar Token"
+
         menuGerarToken.addActionListener(e -> {
             tokenGerado = gerarTokenAleatorio();
             JOptionPane.showMessageDialog(this, "Token gerado: " + tokenGerado);
         });
-        // Ação para "Validar Token"
+
         menuValidarToken.addActionListener(e -> {
             if (tokenGerado == null) {
                 JOptionPane.showMessageDialog(this, "Nenhum token foi gerado ainda!");
             } else {
-                String tokenDigitado = JOptionPane.showInputDialog(this, "Digite o token para validação:");
+                String tokenDigitado = JOptionPane.showInputDialog(this, "Digite o token:");
                 if (tokenDigitado != null && tokenDigitado.equals(tokenGerado)) {
                     JOptionPane.showMessageDialog(this, "Token válido!");
                 } else {
@@ -93,100 +79,129 @@ public class JanelaComMenus extends JFrame {
                 }
             }
         });
+
         menuToken.add(menuGerarToken);
         menuToken.add(menuValidarToken);
-        // Adicionando os menus à barra de menu
+
         menuBar.add(menuArquivo);
         menuBar.add(menuFerramenta);
         menuBar.add(menuConfiguracao);
         menuBar.add(menuToken);
-        // Definindo a barra de menu na janela
+
         setJMenuBar(menuBar);
 
 
-                                        /* PAINEL CENTRAL DE INFORMAÇÕES */
-        //Criação da localização dele
-        JPanel painelCentral = new JPanel();
-        painelCentral.setLayout(null);
-        painelCentral.setBorder(BorderFactory.createTitledBorder("Cadastro do Corredor"));
-        painelCentral.setBackground(Color.WHITE);
-        painelCentral.setLayout(new GridLayout(10, 10, 10, 10));
+//------------- AQUI COMEÇA O FORM QUE VAI SER PREENCHIDO --------------------        
+        JPanel painel = new JPanel(new BorderLayout());
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        //título dele
-        JLabel titulo = new JLabel("Cadastro de Corredor");
-        titulo.setFont(new Font("Arial", Font.BOLD, 40));
-        titulo.setHorizontalAlignment(SwingConstants.CENTER);
+        campoNome = new JTextField(10);
+        campoNumero = new JTextField(10);
+        campoAno = new JTextField(10);
+        campoEquipe = new JTextField(10);
+        campoTelefone = new JTextField(10);
 
+        radioMasculino = new JRadioButton("Masculino");
+        radioFeminino = new JRadioButton("Feminino");
+        grupoSexo = new ButtonGroup();
+        grupoSexo.add(radioMasculino);
+        grupoSexo.add(radioFeminino);
 
-        // Formulário para cadastro
-        JLabel labelNumero = new JLabel("Número do Corredor:");
-        labelNumero.setFont(new Font("Arial", Font.BOLD, 20));
-        labelNumero.setHorizontalAlignment(SwingConstants.CENTER); // Centraliza o texto do label
+        formPanel.add(new JLabel("Nome:"));
+        formPanel.add(campoNome);
+        formPanel.add(new JLabel("Número:"));
+        formPanel.add(campoNumero);
+        formPanel.add(new JLabel("Ano:"));
+        formPanel.add(campoAno);
+        formPanel.add(new JLabel("Sexo:"));
 
-        CampoNumero = new JTextField(10);
-        CampoNumero.setHorizontalAlignment(JTextField.CENTER); // Centraliza o texto dentro do campo
-        CampoNumero.setPreferredSize(new Dimension(100, 20));
+        JPanel sexoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        sexoPanel.add(radioMasculino);
+        sexoPanel.add(radioFeminino);
+        formPanel.add(sexoPanel);
 
+        formPanel.add(new JLabel("Equipe:"));
+        formPanel.add(campoEquipe);
+        formPanel.add(new JLabel("Telefone:"));
+        formPanel.add(campoTelefone);
 
-        // Botão Confirmar
-        botaoConfirmar = new JButton("Confirmar");
-        botaoConfirmar.addActionListener(e -> SalvarDados());
+        JButton botaoAdicionar = new JButton("Adicionar");
+        botaoAdicionar.addActionListener(this::adicionarCorredor);
 
+        JPanel botaoPanel = new JPanel();
+        botaoPanel.add(botaoAdicionar);
 
+        listaModel = new DefaultListModel<>();
+        listaCorredores = new JList<>(listaModel);
+        JScrollPane scrollPane = new JScrollPane(listaCorredores);
 
-        // Adicionando os componentes ao painel
-        painelCentral.add(labelNumero);
-        painelCentral.add(CampoNumero);
-        painelCentral.add(new JLabel()); // Espaço vazio
-        painelCentral.add(botaoConfirmar);
+        painel.add(formPanel, BorderLayout.NORTH);
+        painel.add(botaoPanel, BorderLayout.CENTER);
+        painel.add(scrollPane, BorderLayout.SOUTH);
 
-        // Adicionando componentes ao JFrame
-        add(titulo, BorderLayout.NORTH);
-        add(painelCentral, BorderLayout.CENTER);
-
-
-
-
-        /* VISIBILIDADE TRUE DA JANELA */
+        carregarCorredores();
+        add(painel);
         setVisible(true);
     }
 
-    // Método para gerar um token aleatório
-    private String gerarTokenAleatorio() {
-        Random random = new Random();
-        StringBuilder token = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
-            token.append(random.nextInt(10)); // Gera um número de 0 a 9
-        }
-        return token.toString();
-    }
+    private void adicionarCorredor(ActionEvent e) {
+        String nome = campoNome.getText();
+        String numero = campoNumero.getText();
+        String ano = campoAno.getText();
+        String sexo = radioMasculino.isSelected() ? "M" : (radioFeminino.isSelected() ? "F" : "N/A");
+        String equipe = campoEquipe.getText();
+        String telefone = campoTelefone.getText();
 
-    //Cadastro de corredor
-    private void SalvarDados(){
-        String numero = CampoNumero.getText();
-
-        //Validar se todos os campos foram preenchidos
-        if (numero.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Preencha todos os campos para continuar!", "Erro", JOptionPane.ERROR_MESSAGE);
+        if (nome.isEmpty() || numero.isEmpty() || ano.isEmpty() || equipe.isEmpty() || telefone.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Preencha todos os campos!", "Erro", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        //Criando o arquivo .txt
-        String conteudo = "Número: " + numero;
+        String sql = String.format("INSERT INTO corredores (nome, numero, ano, sexo, equipe, telefone) VALUES ('%s', '%s', '%s', '%s', '%s', '%s');\n",
+                nome, numero, ano, sexo, equipe, telefone);
 
-        //Salvando em um arquivo .txt
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("Parque.txt", true))){
-            writer.write(conteudo);
-            JOptionPane.showMessageDialog(this, "Salvo com sucesso!");
-            limparCampos();
-        }catch (IOException ex){
-            JOptionPane.showMessageDialog(this, "Erro ao salvar o arquivo!", "Erro", JOptionPane.ERROR_MESSAGE);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ARQUIVO_SQL, true))) {
+            writer.write(sql);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao salvar no arquivo!", "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+
+        limparCampos();
+        carregarCorredores();
+    }
+
+    private void carregarCorredores() {
+        listaModel.clear();
+        if (!Files.exists(Paths.get(ARQUIVO_SQL))) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(ARQUIVO_SQL))) {
+            String linha;
+            while ((linha = reader.readLine()) != null) {
+                if (linha.startsWith("INSERT INTO corredores")) {
+                    String[] partes = linha.split("VALUES")[1].replaceAll("[()';]", "").split(",");
+                    listaModel.addElement(String.join(", ", partes).trim());
+                }
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Erro ao ler o arquivo!", "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void limparCampos(){
-        CampoNumero.setText("");
+    private void limparCampos() {
+        campoNome.setText("");
+        campoNumero.setText("");
+        campoAno.setText("");
+        grupoSexo.clearSelection();
+        campoEquipe.setText("");
+        campoTelefone.setText("");
     }
+
+    private String gerarTokenAleatorio() {
+        Random random = new Random();
+        return String.format("%06d", random.nextInt(1000000));
+    }
+
     public static void main(String[] args) {
         new JanelaComMenus();
     }
